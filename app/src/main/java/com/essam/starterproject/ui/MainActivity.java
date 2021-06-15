@@ -10,6 +10,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.Bundle;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.essam.starterproject.R;
 import com.essam.starterproject.base.BaseActivity;
@@ -21,7 +22,8 @@ import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
-    ProgressBar progressBar;
+    ProgressBar progressBarLoading;
+    ProgressBar progressBarScroll;
     MainActivityViewModel viewModel;
     RecyclerView recyclerView;
     SwipeRefreshLayout swipeContainer;
@@ -36,7 +38,7 @@ public class MainActivity extends BaseActivity {
         setupRecyclerView();
         viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
         getData();
-        showHideLoader(true,progressBar);
+        showHideLoader(false,progressBarScroll);
         handlePollToRefresh();
     }
 
@@ -55,12 +57,17 @@ public class MainActivity extends BaseActivity {
         isLoading = true;
         viewModel.getItems().observe(this, new Observer<Resource<List<Operators>>>() {
             public void onChanged(@Nullable Resource<List<Operators>> itemsList) {
-                showHideLoader(false,progressBar);
+                showHideLoader(false,progressBarLoading);
+                showHideLoader(false,progressBarScroll);
                 swipeContainer.setRefreshing(false);
                 if(itemsList.getStatus() == Resource.Status.SUCCESS){
-                    if (itemsList.getData() != null) {
+                    if (itemsList.getData().isEmpty()){
+                        Toast.makeText(getApplicationContext(),"No more items to load",Toast.LENGTH_SHORT).show();
+                    }
+                    else if (itemsList.getData() != null) {
                         adapter.insertData(itemsList.getData());
                     }
+
                 }else{
                     showErrorMessage(itemsList.getErrorMsg());
                 }
@@ -77,7 +84,7 @@ public class MainActivity extends BaseActivity {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 if (! recyclerView.canScrollVertically(1) && !isLoading){ //1 for down
-                    showHideLoader(true,progressBar);
+                    showHideLoader(true,progressBarScroll);
                     getData();
                 }
             }
@@ -87,6 +94,8 @@ public class MainActivity extends BaseActivity {
     void bindViews (){
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBarLoading = (ProgressBar) findViewById(R.id.progressBarLoading);
+        progressBarScroll = (ProgressBar) findViewById(R.id.progressBarScroll);
+
     }
 }
